@@ -1,0 +1,6 @@
+需要修改的文件：sigma_OHE.f90
+    需要修改的函数：velocity_calc velocity_bar_calc
+    需要查看的函数：velocity_ohe_calc_symm cal_sigma_iband_k
+
+变量保存位置：module.f90 中的 module para 中
+哈密顿量的能量单位要保证是Hartree

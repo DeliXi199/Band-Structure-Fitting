@@ -1,0 +1,5 @@
+.conda
+Code/velocity.exe
+Data/*
+!Data/EIGENVAL_band
+!Data/EIGENVAL_fit
