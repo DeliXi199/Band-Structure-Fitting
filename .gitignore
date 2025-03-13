@@ -2,6 +2,6 @@
 Code/velocity.exe
 Code/tempCodeRunnerFile.py
 Data/*
-!Data/EIGENVAL_band
-!Data/EIGENVAL_fit
+!Data/EIGENVAL*
+!Data/POSCAR*
 References/开题报告*

@@ -132,12 +132,38 @@ def compute_reciprocal_lattice(lattice):
     return np.array([b1, b2, b3])
 
 
-def get_H(i, j, M, expp, distance):
+def get_symmetry_operations(
+    cell, cell_reciprocal, lattice, reciprocal_lattice, kpoints
+):
+    ## 提取对称性操作
+    dataset = spglib.get_symmetry_dataset(cell)
+    rotations = dataset.rotations  # 获取旋转操作
+
+    ## 获取实空间不可约网格
+    number_mesh = 50  # 控制网格的分辨率
+    mesh = [number_mesh, number_mesh, number_mesh]  # 网格大小 (你可以根据需要调整)
+
+    ir_Rpoints = spglib.get_ir_reciprocal_mesh(mesh, cell_reciprocal)
+    Rpoints_index = np.unique(ir_Rpoints[0])
+    Rpoints_ir_end = ir_Rpoints[1][Rpoints_index]
+    # 计算每个点到原点的欧几里得距离
+    distances = np.linalg.norm(Rpoints_ir_end, axis=1)
+    # 按照距离对数据排序
+    sorted_indices = np.argsort(distances)  # 获取排序后的索引
+    sorted_Rpoints = Rpoints_ir_end[sorted_indices]  # 根据排序后的索引重新排列数据
+    Rpoints_end = sorted_Rpoints[0:M]
+
+    ## 使用分数坐标
+    kpoints = np.dot(kpoints, reciprocal_lattice)  # 转换坐标
+    Rvec = np.dot(Rpoints_end, lattice)  # 转换坐标
+
+    return rotations, kpoints, Rvec
+
+
+def get_H(i, j, M, exppim, exppjm, distance):
     Hijm = 0.0
     for m in range(1, M):
-        eppi = expp[i, m] - expp[-1, m]
-        eppj = np.conj(expp[j, m]) - np.conj(expp[-1, m])
-        Hijm += eppi * eppj / distance[m]
+        Hijm += exppim[m] * exppjm[m] / distance[m]
     return i, j, Hijm
 
 
@@ -153,33 +179,6 @@ def get_distance(coord):
 
 def get_fermi_data():
     size = 16
-
-    ## 获取晶体的空间群信息，
-    positions = [[0.0, 0.0, 0.0]]  # 原子位置，仍然是列表
-    numbers = [14]  # Si 的原子编号，仍然是列表
-
-    # 将这些值合成一个元组传递给 spglib
-    cell = (lattice, positions, numbers)
-    cell_reciprocal = (reciprocal_lattice, positions, numbers)
-
-    ## 提取对称性操作
-    dataset = spglib.get_symmetry_dataset(cell)
-    rotations = dataset.rotations  # 获取旋转操作
-
-    number_mesh = 20  # 控制网格的分辨率
-    mesh = [number_mesh, number_mesh, number_mesh]  # 网格大小 (你可以根据需要调整)
-
-    ## 获取实空间不可约网格
-    ir_Rpoints = spglib.get_ir_reciprocal_mesh(mesh, cell_reciprocal)
-    Rpoints_index = np.unique(ir_Rpoints[0])
-    Rpoints_ir_end = ir_Rpoints[1][Rpoints_index]
-    # 计算每个点到原点的欧几里得距离
-    distances = np.linalg.norm(Rpoints_ir_end, axis=1)
-    # 按照距离对数据排序
-    sorted_indices = np.argsort(distances)  # 获取排序后的索引
-    sorted_Rpoints = Rpoints_ir_end[sorted_indices]  # 根据排序后的索引重新排列数据
-    Rpoints_end = sorted_Rpoints[0:M]
-
     # 生成从 -1 到 1 之间的 16 个均匀分布的数据
     x = np.linspace(0, 1, size + 1)
     y = np.linspace(0, 1, size + 1)
@@ -203,6 +202,31 @@ def get_fermi_data():
     return fermi_data
 
 
+def write_files():
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes.txt")
+    np.savetxt(filename, coes)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len.txt")
+    np.savetxt(filename, star_R_len, fmt="%d")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.txt")
+    np.savetxt(filename, star_R.reshape(-1, star_R.shape[-1]))
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.npy")
+    np.save(filename, star_R)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec.txt")
+    np.savetxt(filename, Rvec)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS.txt")
+    np.savetxt(
+        filename, np.array([N, M, rotations.shape[0], Nband_Fermi_Level]), fmt="%d"
+    )
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H.txt")
+    np.savetxt(filename, H)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp.txt")
+    np.savetxt(filename, expp)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v.txt")
+    np.savetxt(filename, kpoints / 2 / np.pi)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
+    np.savetxt(filename, fermi_data)
+
+
 if __name__ == "__main__":
     ## 用于计算某个kpoints点的能量
 
@@ -216,7 +240,8 @@ if __name__ == "__main__":
     kpoints = np.array(kpoints)
     energies = np.array(energies)
 
-    fermi_level = 7.7083
+    # fermi_level = 7.7083
+    fermi_level = -1.3888
     Nband_Fermi_Level = 0
     bands_fermi_level = []
     for i in range(energies.shape[1]):
@@ -239,57 +264,19 @@ if __name__ == "__main__":
     ## 获取晶体的空间群信息，
     positions = [[0.0, 0.0, 0.0]]  # 原子位置，仍然是列表
     numbers = [14]  # Si 的原子编号，仍然是列表
-
     # 将这些值合成一个元组传递给 spglib
     cell = (lattice, positions, numbers)
     cell_reciprocal = (reciprocal_lattice, positions, numbers)
 
-    ## 提取对称性操作
-    dataset = spglib.get_symmetry_dataset(cell)
-    rotations = dataset.rotations  # 获取旋转操作
-
-    ## 获取实空间不可约网格
-    number_mesh = 50  # 控制网格的分辨率
-    mesh = [number_mesh, number_mesh, number_mesh]  # 网格大小 (你可以根据需要调整)
-
-    ir_Rpoints = spglib.get_ir_reciprocal_mesh(mesh, cell_reciprocal)
-    Rpoints_index = np.unique(ir_Rpoints[0])
-    Rpoints_ir_end = ir_Rpoints[1][Rpoints_index]
-    # 计算每个点到原点的欧几里得距离
-    distances = np.linalg.norm(Rpoints_ir_end, axis=1)
-    # 按照距离对数据排序
-    sorted_indices = np.argsort(distances)  # 获取排序后的索引
-    sorted_Rpoints = Rpoints_ir_end[sorted_indices]  # 根据排序后的索引重新排列数据
-    Rpoints_end = sorted_Rpoints[0:M]
-    # print(Rpoints_end.shape[0])
-    # print(Rpoints_end)
-
-    ## 转换坐标，将分数坐标转换为实数坐标
     ## 使用分数坐标
     reciprocal_lattice = np.eye(3) * 2 * np.pi
     lattice = np.eye(3)
-    kpoints = np.dot(kpoints, reciprocal_lattice)  # 转换坐标
-    Rvec = np.dot(Rpoints_end, lattice)  # 转换坐标
+
+    rotations, kpoints, Rvec = get_symmetry_operations(
+        cell, cell_reciprocal, lattice, reciprocal_lattice, kpoints
+    )
 
     print("initialize done")
-
-    vkk = np.loadtxt(
-        r"D:\OneDrive - whu.edu.cn\Second_brain\Code\能带拟合\能带\拟合\vkk.txt"
-    )
-    # 晶格常数（单位：Å，铜的实验值约为3.615 Å）
-    a = 3.615  # 可根据实际需要调整
-
-    # FCC 晶格向量（单位晶格向量）
-    Cu = np.array(
-        [
-            [0.5 * a, 0.5 * a, 0.0 * a],
-            [0.5 * a, 0.0 * a, 0.5 * a],
-            [0.0 * a, 0.5 * a, 0.5 * a],
-        ]
-    )
-    Cu_inverse = np.linalg.inv(Cu)
-    v_end = np.matmul(vkk, Cu_inverse)
-    print("vkk done", v_end)
 
     ## 计算转移矩阵
     H = np.zeros((N - 1, N - 1))
@@ -297,7 +284,7 @@ if __name__ == "__main__":
     star_Rpoints = np.zeros((M, rotations.shape[0], 3))
     for m in range(M):
         for r in range(rotations.shape[0]):
-            star_Rpoints[m, r, :] = np.dot(rotations[r], Rpoints_end[m, :])
+            star_Rpoints[m, r, :] = np.dot(rotations[r], Rvec[m, :])
     print("star_Rpoints done")
 
     expp = np.zeros((N, M))
@@ -340,6 +327,12 @@ if __name__ == "__main__":
                 )
     print("expp done")
 
+    exppi = np.zeros((N, M))
+    exppj = np.zeros((N, M))
+    for m in range(1, M):
+        exppi[:, m] = expp[:, m] - expp[-1, m]
+    exppj = np.conj(exppi)
+
     with multiprocessing.Pool(processes=cores) as pool:
         results = pool.starmap(
             get_H,
@@ -348,7 +341,8 @@ if __name__ == "__main__":
                     i,
                     j,
                     M,
-                    expp,
+                    exppi[i, :],
+                    exppj[j, :],
                     distance,
                 )
                 for i in range(N - 1)
@@ -358,16 +352,6 @@ if __name__ == "__main__":
         for i, j, Hijm in results:
             H[i, j] = Hijm
             H[j, i] = np.conj(H[i, j])
-
-    # for i in range(N - 1):
-    #     for j in range(i + 1):
-    #         for m in range(1, M):
-    #             eppi = expp[i, m] - expp[-1, m]
-    #             eppj = np.conj(expp[j, m]) - np.conj(expp[-1, m])
-    #             H[i, j] += eppi * eppj / distance[m]
-    #         H[j, i] = np.conj(H[i, j])
-
-    # print(H1[i, j])
     print("H done")
     # # 检查矩阵是否可逆（行列式是否为非零）
     # det = np.linalg.det(H)
@@ -418,80 +402,6 @@ if __name__ == "__main__":
 
         print("minus", epsilons - energy)
 
-        print("k:", [0.3692308e-0, 0.0000000e00, 0.0000000e00])
-
-        v = velocity(
-            np.dot([0.3692308e-0, 0.0000000e00, 0.0000000e00], reciprocal_lattice),
-            band_index,
-        )
-        print("v:", v)
-
-        E = fun(
-            np.dot([0.3692308e-0, 0.0000000e00, 0.0000000e00], reciprocal_lattice),
-            band_index,
-        )
-        print("E:", E)
-
-    # def fun(kpointsk):
-    #     result = 0
-    #     exp_factors = np.zeros(len(coe))
-    #     star_Rpoints_copy_abs = np.abs(star_Rpoints_copy)
-    #     max = int(np.max(star_Rpoints_copy_abs))
-    #     k_R1 = np.ones(max + 1)
-    #     k_R1[1] = np.exp(1j * np.dot(kpointsk, lattice[0, :]))
-    #     k_R2 = np.ones(max + 1)
-    #     k_R2[1] = np.exp(1j * np.dot(kpointsk, lattice[1, :]))
-    #     k_R3 = np.ones(max + 1)
-    #     k_R3[1] = np.exp(1j * np.dot(kpointsk, lattice[2, :]))
-    #     k_R1_value = 1j
-    #     k_R2_value = 1j
-    #     k_R3_value = 1j
-    #     for i in range(2, max + 1):
-    #         k_R1[i] = k_R1[i - 1] * k_R1[1]
-    #         k_R2[i] = k_R2[i - 1] * k_R2[1]
-    #         k_R3[i] = k_R3[i - 1] * k_R3[1]
-    #     for m in range(len(coe)):
-    #         star_R_m = star_Rpoints_copy[m, :, :]
-    #         star_R_m = np.unique(star_R_m, axis=0)
-    #         for i in range(star_R_m.shape[0]):
-    #             if star_R_m[i, 0] < 0:
-    #                 k_R1_value = k_R1[-int(star_R_m[i, 0])].conj()
-    #             else:
-    #                 k_R1_value = k_R1[int(star_R_m[i, 0])]
-    #             if star_R_m[i, 1] < 0:
-    #                 k_R2_value = k_R2[-int(star_R_m[i, 1])].conj()
-    #             else:
-    #                 k_R2_value = k_R2[int(star_R_m[i, 1])]
-    #             if star_R_m[i, 2] < 0:
-    #                 k_R3_value = k_R3[-int(star_R_m[i, 2])].conj()
-    #             else:
-    #                 k_R3_value = k_R3[int(star_R_m[i, 2])]
-    #             exp_factors[m] += k_R1_value * k_R2_value * k_R3_value
-    #         result += coe[m] * np.sum(exp_factors) / star_R_m.shape[0]
-
-    #     return result
-
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes.txt")
-    np.savetxt(filename, coes)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len.txt")
-    np.savetxt(filename, star_R_len, fmt="%d")
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.txt")
-    np.savetxt(filename, star_R.reshape(-1, star_R.shape[-1]))
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.npy")
-    np.save(filename, star_R)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec.txt")
-    np.savetxt(filename, Rvec)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS.txt")
-    np.savetxt(
-        filename, np.array([N, M, rotations.shape[0], Nband_Fermi_Level]), fmt="%d"
-    )
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H.txt")
-    np.savetxt(filename, H)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp.txt")
-    np.savetxt(filename, expp)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v.txt")
-    np.savetxt(filename, kpoints / 2 / np.pi)
-
     print("mean star_R_len:", np.mean(star_R_len))
 
     time_end = time.time()
@@ -500,9 +410,9 @@ if __name__ == "__main__":
     # print("epsilons:", epsilons)
 
     ## 获取画费米面的数据
-    fermi_data = get_fermi_data()
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
-    np.savetxt(filename, fermi_data)
+    # fermi_data = get_fermi_data()
+
+    # write_files()
 
     time_end = time.time()
     print("Time used:", time_end - time_start)
