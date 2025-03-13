@@ -223,8 +223,8 @@ def write_files():
     np.savetxt(filename, expp)
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v.txt")
     np.savetxt(filename, kpoints / 2 / np.pi)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
-    np.savetxt(filename, fermi_data)
+    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
+    # np.savetxt(filename, fermi_data)
 
 
 if __name__ == "__main__":
@@ -250,6 +250,8 @@ if __name__ == "__main__":
             bands_fermi_level.append(i + 1)
     bands_fermi_level = np.array(bands_fermi_level)
 
+    print("Nband_Fermi_Level:", Nband_Fermi_Level)
+
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "POSCAR")
     scale, lattice = read_poscar(filename)
     lattice = np.array(lattice)
@@ -262,8 +264,10 @@ if __name__ == "__main__":
     M = round(N * 4)  # 用于拟合的基函数数
     print("N:", N)
     ## 获取晶体的空间群信息，
-    positions = [[0.0, 0.0, 0.0]]  # 原子位置，仍然是列表
-    numbers = [14]  # Si 的原子编号，仍然是列表
+    # positions = [[0.0, 0.0, 0.0]]  # 原子位置，仍然是列表
+    # numbers = [14]  # Si 的原子编号，仍然是列表
+    positions = np.array([[0.234, 0.234, 0.234], [0.766, 0.766, 0.766]])  # 原子坐标
+    numbers = [83, 83]  # Bi 原子序数
     # 将这些值合成一个元组传递给 spglib
     cell = (lattice, positions, numbers)
     cell_reciprocal = (reciprocal_lattice, positions, numbers)
@@ -365,6 +369,7 @@ if __name__ == "__main__":
     # epsilons = np.arange(0, N, 1)
 
     coes = np.zeros((Nband_Fermi_Level, M))
+    print("bands_fermi_level:", bands_fermi_level)
 
     band_index = 0
     for iband in bands_fermi_level:
@@ -402,6 +407,9 @@ if __name__ == "__main__":
 
         print("minus", epsilons - energy)
 
+        band_index += 1
+
+        print("band_index:", band_index)
     print("mean star_R_len:", np.mean(star_R_len))
 
     time_end = time.time()
@@ -412,7 +420,7 @@ if __name__ == "__main__":
     ## 获取画费米面的数据
     # fermi_data = get_fermi_data()
 
-    # write_files()
+    write_files()
 
     time_end = time.time()
     print("Time used:", time_end - time_start)

@@ -5,3 +5,4 @@ Data/*
 !Data/EIGENVAL*
 !Data/POSCAR*
 References/开题报告*
+Code/test.py

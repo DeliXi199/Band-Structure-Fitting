@@ -3,6 +3,9 @@ import numpy as np
 import os
 
 N = 40
+number_of_bands = 6
+lowest_band = 3
+fermi_level = -1.3875
 
 
 # 定义读取 EIGENVAL 文件的函数
@@ -66,7 +69,7 @@ k_distances = np.arange(kpoints.shape[0])
 
 # 绘制能带结构图，仅选择前 4 条能带
 plt.figure(figsize=(10, 6))
-for band in range(4):  # 仅绘制前 4 条能带
+for band in range(number_of_bands):  # 仅绘制前 4 条能带
     band_energies = [energies[k][band] for k in range(len(kpoints))]
     plt.plot(k_distances, band_energies, color="b")
 
@@ -172,19 +175,17 @@ def get_coe(band_index):
     return coe
 
 
-energies_new = np.zeros((6, (len(kpoints))))
-for j in range(0, 6):
+energies_new = np.zeros((number_of_bands, (len(kpoints))))
+for j in range(lowest_band - 1, number_of_bands):
     coe = get_coe(j)
     for i in range(len(kpoints)):
         energies_new[j, i] = fun(kpoints[i, :])
-
-fermi_level = 7.7083
 
 
 plt.figure(figsize=(8, 6))
 
 # 绘制原始能带（VASP计算的能带）
-for i in range(0, 6):
+for i in range(lowest_band - 1, number_of_bands):
     plt.plot(
         k_distances,
         energies[:, i] - fermi_level,
@@ -194,7 +195,7 @@ for i in range(0, 6):
     )  # 蓝色实线，仅第一个线条加上标签
 
 # 绘制修改后的能带（SKW方法拟合得到的能带）
-for i in range(0, 6):
+for i in range(lowest_band - 1, number_of_bands):
     plt.plot(
         k_distances,
         energies_new[i, :] - fermi_level,
@@ -221,7 +222,7 @@ plt.text(
 )
 
 # 假设这些是高对称点在 k_distances 中的索引
-high_symmetry_indices = np.arange(0, 39 * 8, 39)
+high_symmetry_indices = np.arange(0, 39 * 5, 39)
 # 对应的高对称点标签
 high_symmetry_labels = ["X", "W", "L", "Γ", "X", "K", "U", "Γ"]
 
@@ -244,7 +245,8 @@ for index, label in zip(high_symmetry_indices, high_symmetry_labels):
 # 设置坐标轴标签和标题
 # plt.xlabel("k-point Index", fontsize=14)
 plt.ylabel("Energy (eV)", fontsize=14)
-plt.title("Band Structure (Lowest 6 Bands)", fontsize=16)
+plt.title(f"Band Structure (Lowest {number_of_bands} Bands)", fontsize=16)
+
 
 # 设置网格
 plt.grid(True)
