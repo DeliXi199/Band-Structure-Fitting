@@ -139,9 +139,8 @@ def fun(kpointsk):
     return result
 
 
-_, energies_fit = read_eigenval(
-    r"D:\OneDrive - whu.edu.cn\Second_brain\Code\能带拟合\能带\拟合\EIGENVAL"
-)
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit")
+_, energies_fit = read_eigenval(filename)
 energies_fit = np.array(energies_fit)
 
 
@@ -174,36 +173,86 @@ def get_coe(band_index):
 
 
 energies_new = np.zeros((6, (len(kpoints))))
-for j in range(5, 6):
+for j in range(0, 6):
     coe = get_coe(j)
     for i in range(len(kpoints)):
         energies_new[j, i] = fun(kpoints[i, :])
 
+fermi_level = 7.7083
 
-plt.figure()
-energies = np.array(energies)
-for i in range(5, 6):
-    plt.plot(k_distances, energies[:, i], color="b")
-    plt.plot(k_distances, energies_new[i, :], color="r")
+
+plt.figure(figsize=(8, 6))
+
+# 绘制原始能带（VASP计算的能带）
+for i in range(0, 6):
+    plt.plot(
+        k_distances,
+        energies[:, i] - fermi_level,
+        color="#1f77b4",
+        lw=2,
+        label="VASP Calculated Bands" if i == 0 else "",
+    )  # 蓝色实线，仅第一个线条加上标签
+
+# 绘制修改后的能带（SKW方法拟合得到的能带）
+for i in range(0, 6):
+    plt.plot(
+        k_distances,
+        energies_new[i, :] - fermi_level,
+        color="#ff7f0e",
+        lw=2,
+        linestyle="--",
+        label="SKW Fitted Bands" if i == 0 else "",  # 橙色虚线，仅第一个线条加上标签
+    )
+
+# 添加图例
+plt.legend(loc="upper right")
+
+# 绘制费米能量标线
+plt.axhline(0, color="r", linestyle="--", lw=2)  # 黑色虚线标记费米能量
+# 在费米能量位置添加标签，明确说明是费米能量
+plt.text(
+    k_distances[len(k_distances) - 1],  # 让标签在中间位置显示
+    0,  # 能量为0的位置
+    r"$E_F$",  # 费米能标签
+    color="r",  # 黑色标签
+    ha="center",  # 标签居中
+    va="bottom",  # 标签位置稍微在费米能量上方
+    fontsize=14,
+)
+
 # 假设这些是高对称点在 k_distances 中的索引
-high_symmetry_indices = np.arange(0, 39 * 6, 39)
+high_symmetry_indices = np.arange(0, 39 * 8, 39)
 # 对应的高对称点标签
-high_symmetry_labels = ["Γ", "X", "U", "L", "W", "Γ"]
+high_symmetry_labels = ["X", "W", "L", "Γ", "X", "K", "U", "Γ"]
 
 # 循环添加高对称点标记
 for index, label in zip(high_symmetry_indices, high_symmetry_labels):
     high_symmetry_k = k_distances[index]
-    plt.axvline(x=high_symmetry_k, color="r", linestyle="--")  # 红色虚线标记高对称点
+    plt.axvline(
+        x=high_symmetry_k, color="#2ca02c", linestyle="--", lw=1
+    )  # 绿色虚线标记高对称点
     plt.text(
-        high_symmetry_k, plt.ylim()[0], label, color="r", ha="center", va="top"
-    )  # 添加标签
-fermi_level = 7.7083
+        high_symmetry_k,
+        plt.ylim()[0],
+        label,
+        color="#2ca02c",
+        ha="center",
+        va="top",
+        fontsize=14,
+    )  # 添加标签，绿色
 
-plt.xlabel("k-point Index")
-plt.ylabel("Energy (eV)")
-plt.title("Band Structure (Lowest 4 Bands)")
+# 设置坐标轴标签和标题
+# plt.xlabel("k-point Index", fontsize=14)
+plt.ylabel("Energy (eV)", fontsize=14)
+plt.title("Band Structure (Lowest 6 Bands)", fontsize=16)
+
+# 设置网格
 plt.grid(True)
 
+# 隐藏x轴的数字刻度
+plt.xticks([])
+
+# 显示图形
 plt.show()
 
 

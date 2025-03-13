@@ -1,5 +1,7 @@
 .conda
 Code/velocity.exe
+Code/tempCodeRunnerFile.py
 Data/*
 !Data/EIGENVAL_band
 !Data/EIGENVAL_fit
+References/开题报告*

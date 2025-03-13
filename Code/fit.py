@@ -476,9 +476,9 @@ if __name__ == "__main__":
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len.txt")
     np.savetxt(filename, star_R_len, fmt="%d")
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.txt")
-    np.savetxt("star_R.txt", star_R.reshape(-1, star_R.shape[-1]))
+    np.savetxt(filename, star_R.reshape(-1, star_R.shape[-1]))
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.npy")
-    np.save("star_R.npy", star_R)
+    np.save(filename, star_R)
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec.txt")
     np.savetxt(filename, Rvec)
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS.txt")
@@ -489,7 +489,8 @@ if __name__ == "__main__":
     np.savetxt(filename, H)
     filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp.txt")
     np.savetxt(filename, expp)
-    np.savetxt("k_v.txt", kpoints / 2 / np.pi)
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v.txt")
+    np.savetxt(filename, kpoints / 2 / np.pi)
 
     print("mean star_R_len:", np.mean(star_R_len))
 
@@ -498,7 +499,10 @@ if __name__ == "__main__":
     # print("energy:", energy)
     # print("epsilons:", epsilons)
 
-    # fermi_data = get_fermi_data()
-    # np.savetxt("fermi_data.txt", fermi_data)
+    ## 获取画费米面的数据
+    fermi_data = get_fermi_data()
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
+    np.savetxt(filename, fermi_data)
+
     time_end = time.time()
     print("Time used:", time_end - time_start)
