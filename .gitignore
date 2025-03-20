@@ -4,5 +4,8 @@ Code/tempCodeRunnerFile.py
 Data/*
 !Data/EIGENVAL*
 !Data/POSCAR*
+!Data/coes*
+!/Data/NMS*
+!/Data/star_R*
 References/开题报告*
 Code/test.py

@@ -5,7 +5,7 @@ import os
 N = 40
 number_of_bands = 6
 lowest_band = 3
-fermi_level = -1.3875
+fermi_level = 7.7083
 
 
 # 定义读取 EIGENVAL 文件的函数
@@ -46,7 +46,7 @@ def read_eigenval(filename="EIGENVAL"):
 
 
 # 读取 EIGENVAL 文件的数据
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_band")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_band_Cu")
 kpoints, energies = read_eigenval(filename)
 
 
@@ -101,17 +101,17 @@ ax.set_ylabel("k_y")
 ax.set_zlabel("k_z")
 ax.set_title("Energy Distribution in k-space")
 
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes.txt")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes_Cu.txt")
 coe = np.loadtxt(filename, dtype=complex)
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec.txt")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec_Cu.txt")
 Rvec = np.loadtxt(filename)
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.npy")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_Cu.npy")
 star_R = np.load(filename)
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len.txt")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len_Cu.txt")
 star_R_len = np.loadtxt(filename, dtype=int)
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H.txt")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H_Cu.txt")
 H = np.loadtxt(filename)
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp.txt")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp_Cu.txt")
 expp = np.loadtxt(filename)
 
 
@@ -142,7 +142,7 @@ def fun(kpointsk):
     return result
 
 
-filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit")
+filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit_Cu")
 _, energies_fit = read_eigenval(filename)
 energies_fit = np.array(energies_fit)
 
@@ -191,7 +191,7 @@ for i in range(lowest_band - 1, number_of_bands):
             energies[:, i] - fermi_level,
             color="#1f77b4",
             lw=2,
-            label="VASP Calculated Bands"  # 只为第一次绘制的能带设置标签
+            label="VASP Calculated Bands",  # 只为第一次绘制的能带设置标签
         )
     else:
         plt.plot(
@@ -210,7 +210,7 @@ for i in range(lowest_band - 1, number_of_bands):
             color="#ff7f0e",
             lw=2,
             linestyle="--",
-            label="SKW Fitted Bands"  # 只为第一次绘制的能带设置标签
+            label="SKW Fitted Bands",  # 只为第一次绘制的能带设置标签
         )
     else:
         plt.plot(

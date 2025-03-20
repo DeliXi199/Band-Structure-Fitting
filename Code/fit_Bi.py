@@ -204,27 +204,29 @@ def get_fermi_data(bands_fermi_level):
 
 
 def write_files():
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes_Bi.txt")
     np.savetxt(filename, coes)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len.txt")
+    filename = os.path.join(
+        os.path.dirname(__file__), "..", "Data", "star_R_len_Bi.txt"
+    )
     np.savetxt(filename, star_R_len, fmt="%d")
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_Bi.txt")
     np.savetxt(filename, star_R.reshape(-1, star_R.shape[-1]))
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.npy")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_Bi.npy")
     np.save(filename, star_R)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec_Bi.txt")
     np.savetxt(filename, Rvec)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS_Bi.txt")
     np.savetxt(
         filename, np.array([N, M, rotations.shape[0], Nband_Fermi_Level]), fmt="%d"
     )
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H_Bi.txt")
     np.savetxt(filename, H)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp_Bi.txt")
     np.savetxt(filename, expp)
-    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v.txt")
+    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v_Bi.txt")
     # np.savetxt(filename, kpoints / 2 / np.pi)
-    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
+    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data_Bi.txt")
     # np.savetxt(filename, fermi_data)
 
 
@@ -236,13 +238,12 @@ if __name__ == "__main__":
     cores = 8
 
     ## 从文件中读数据，并将数据转换为np数组
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit_Bi")
     kpoints, energies = read_eigenval(filename)
     kpoints = np.array(kpoints)
     energies = np.array(energies)
 
-    fermi_level = 7.7083
-    # fermi_level = -1.0867
+    fermi_level = 5.1446
     Nband_Fermi_Level = 0
     bands_fermi_level = []
     for i in range(energies.shape[1]):
@@ -253,7 +254,7 @@ if __name__ == "__main__":
 
     print("Nband_Fermi_Level:", Nband_Fermi_Level)
 
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "POSCAR")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "POSCAR_Bi")
     scale, lattice = read_poscar(filename)
     lattice = np.array(lattice)
 
@@ -267,10 +268,13 @@ if __name__ == "__main__":
     M = round(N * 4)  # 用于拟合的基函数数
     print("N:", N)
     ## 获取晶体的空间群信息，
-    positions = [[0.0, 0.0, 0.0]]  # 原子位置，仍然是列表
-    numbers = [14]  # Si 的原子编号，仍然是列表
-    # positions = np.array([[0.234, 0.234, 0.234], [0.766, 0.766, 0.766]])  # 原子坐标
-    # numbers = [83, 83]  # Bi 原子序数
+    positions = np.array(
+        [
+            [0.2338899870000000, 0.2338899870000000, 0.2338899870000000],
+            [0.7661100130000001, 0.7661100130000000, 0.7661100130000000],
+        ]
+    )  # 原子坐标
+    numbers = [83, 83]  # Bi 原子序数
     # 将这些值合成一个元组传递给 spglib
     cell = (lattice, positions, numbers)
     cell_reciprocal = (reciprocal_lattice, positions, numbers)
@@ -377,9 +381,9 @@ if __name__ == "__main__":
     band_index = 0
     for iband in bands_fermi_level:
         print("iband:", iband)
-        eV2Hartree = 27.211385
+        eV2Hartree = 1 / 27.211385
 
-        epsilons = (energies[:, iband - 1] - fermi_level) / eV2Hartree
+        epsilons = (energies[:, iband - 1] - fermi_level) * eV2Hartree
 
         delta_epsilons = epsilons[0 : N - 1] - epsilons[-1]
 
@@ -423,7 +427,7 @@ if __name__ == "__main__":
     ## 获取画费米面的数据
     # fermi_data = get_fermi_data(bands_fermi_level)
 
-    # write_files()
+    write_files()
 
     time_end = time.time()
     print("Time used:", time_end - time_start)

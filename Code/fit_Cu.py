@@ -204,27 +204,29 @@ def get_fermi_data(bands_fermi_level):
 
 
 def write_files():
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "coes_Cu.txt")
     np.savetxt(filename, coes)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_len.txt")
+    filename = os.path.join(
+        os.path.dirname(__file__), "..", "Data", "star_R_len_Cu.txt"
+    )
     np.savetxt(filename, star_R_len, fmt="%d")
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_Cu.txt")
     np.savetxt(filename, star_R.reshape(-1, star_R.shape[-1]))
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R.npy")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "star_R_Cu.npy")
     np.save(filename, star_R)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "Rvec_Cu.txt")
     np.savetxt(filename, Rvec)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "NMS_Cu.txt")
     np.savetxt(
         filename, np.array([N, M, rotations.shape[0], Nband_Fermi_Level]), fmt="%d"
     )
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "H_Cu.txt")
     np.savetxt(filename, H)
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp.txt")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "expp_Cu.txt")
     np.savetxt(filename, expp)
-    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v.txt")
+    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "k_v_Cu.txt")
     # np.savetxt(filename, kpoints / 2 / np.pi)
-    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data.txt")
+    # filename = os.path.join(os.path.dirname(__file__), "..", "Data", "fermi_data_Cu.txt")
     # np.savetxt(filename, fermi_data)
 
 
@@ -236,7 +238,7 @@ if __name__ == "__main__":
     cores = 8
 
     ## 从文件中读数据，并将数据转换为np数组
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "EIGENVAL_fit_Cu")
     kpoints, energies = read_eigenval(filename)
     kpoints = np.array(kpoints)
     energies = np.array(energies)
@@ -253,7 +255,7 @@ if __name__ == "__main__":
 
     print("Nband_Fermi_Level:", Nband_Fermi_Level)
 
-    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "POSCAR")
+    filename = os.path.join(os.path.dirname(__file__), "..", "Data", "POSCAR_Cu")
     scale, lattice = read_poscar(filename)
     lattice = np.array(lattice)
 
@@ -423,7 +425,7 @@ if __name__ == "__main__":
     ## 获取画费米面的数据
     # fermi_data = get_fermi_data(bands_fermi_level)
 
-    # write_files()
+    write_files()
 
     time_end = time.time()
     print("Time used:", time_end - time_start)
